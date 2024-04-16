@@ -13,7 +13,7 @@ def searchindex (Amplituds, llista_amplituds):
             return index
         index += 1
 
-arxiu = 'Sounds/44 (Bb altíssimo).wav'
+arxiu = 'Sounds Pietro/A (G4) Pie.wav'
 mostra, senyal = waves.read(arxiu)
 
 sampFreq = 44110
@@ -31,7 +31,7 @@ def increment(absft):
     step = 251
     x = 251
     while  step <= len(absft):
-        maxim = max(absft[(step-251):step])
+        maxim = (max(absft[(step-251):step]))
         index = np.where(absft==maxim)[0][0]
         frequencia = freq[index]
         amplituds.append (maxim)
@@ -58,9 +58,15 @@ for i in d.keys():
     array_amplituds.append (i)
     array_frequencies.append (d[i])
 
+for i in array_amplituds:
+    proporció_general = i*100/sum(absft)
+    proporció_dins_harmònics_màxims = i*100/sum(array_amplituds)
+    print (f'{proporció_general}%')
+    print (f'{proporció_dins_harmònics_màxims}%')
+
 plt.rcParams ['figure.figsize'] = (15,8)
 plt.plot (freq, absft)
-plt.title ('Harmònics Bb (C#6)')
+plt.title ('Anàlisi Fourier A (G4) Pietro')
 plt.xlabel ('Frequency (Hz)')
 plt.ylabel ('Amplitude |X(Freq)|')
 plt.plot (array_frequencies, array_amplituds, 'o', color='k')

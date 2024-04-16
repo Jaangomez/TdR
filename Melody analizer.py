@@ -1,0 +1,55 @@
+import librosa
+import numpy as np
+from scipy import signal
+import matplotlib.pyplot as plt
+
+arxiu = 'idk.wav'
+y, sr = librosa.load(arxiu)
+
+duration = librosa.get_duration(y=y, sr=sr)
+print (duration)
+frame_notes_en_el_temps = librosa.onset.onset_detect(y=y, sr=sr, wait=1, pre_avg=1, post_avg=1, pre_max=1, post_max=1)
+print(frame_notes_en_el_temps) 
+temps_notes = librosa.frames_to_time(frame_notes_en_el_temps)
+print(temps_notes)
+    
+
+frame = 2048
+salt = 512
+frames_arxiu = librosa.util.frame(y, frame_length=frame, hop_length=salt)
+
+
+
+fft_frames = np.fft.fft(frames_arxiu, axis = 0)
+fft_freq = np.fft.fftfreq(len(fft_frames), d=1./sr)
+amplitud = np.abs(fft_frames)
+melodia = []
+for i in (temps_notes):
+    index = int(i*sr/salt)
+    temps = amplitud[:,index]
+    freqindex = np.argmax(temps)
+    freq = np.abs(fft_freq[freqindex])
+    melodia.append(freq)
+
+print (melodia)
+
+melodia_wth_0 = [freq for freq in melodia if freq != 0]
+arr_notes = []
+for freq in melodia_wth_0:
+    nota = librosa.hz_to_note(freq)
+    arr_notes.append(nota)
+
+print (arr_notes)
+
+
+plt.plot (temps_notes, melodia)
+plt.title ('Fourier de melos')
+plt.xlabel ('Time (s)')
+plt.ylabel ('Frequeny (Hz)')
+plt.plot (temps_notes, melodia, 'o', color='k')
+for x, y in zip(temps_notes, melodia):
+    plt.annotate(text=(round(y, 2)), xy=(x,y), xytext = (x, y), horizontalalignment = 'left', 
+            verticalalignment = 'bottom', fontsize=8)
+        
+plt.tight_layout ()
+plt.show ()
