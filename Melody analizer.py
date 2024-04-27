@@ -12,7 +12,7 @@ frame_notes_en_el_temps = librosa.onset.onset_detect(y=y, sr=sr, wait=1, pre_avg
 print(frame_notes_en_el_temps) 
 temps_notes = librosa.frames_to_time(frame_notes_en_el_temps)
 print(temps_notes)
-    
+
 
 frame = 2048
 salt = 512
