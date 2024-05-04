@@ -111,17 +111,9 @@ for arxiu in audios_definitius:
         plt.figure(figsize=(10, 6))
         plt.subplot(2, 1, 1)
         plt.plot(t, senyal2)
-        plt.title('Signal with Unique Frequency')
+        plt.title('No hi ha soroll, així que imprimeixo això')
         plt.xlabel('Time (s)')
         plt.ylabel('Amplitude')
-
-        # Plot the frequency spectrum
-        plt.subplot(2, 1, 2)
-        plt.plot(freqs_output, np.abs(fft_output))
-        plt.title('Frequency Spectrum')
-        plt.xlabel('Frequency (Hz)')
-        plt.ylabel('Magnitude')
-        plt.xlim(0, 50)  # Limit the x-axis to better visualize frequencies of interest
 
         # Show the plot
         plt.tight_layout()
@@ -176,61 +168,83 @@ for arxiu in audios_definitius:
         #càlcul frequencia més abundant --> funciona només per piano
         max_index = np.argmax(np.abs(ft))
         freq_dominant = freq [max_index]
-        print (freq_dominant)
+
         #càlcul frequencia real --> la resta d'instruments
 
-        #def freq_fonamental (amplituds_màximes, absft, freq):
-            #frequencies = []
-            #for i in amplituds_màximes:
-                #indexs = searchindex (i, absft)
-                #frequencies.append(freq[indexs])
+        def freq_fonamental (amplituds_màximes, absft, freq):
+            frequencies = []
+            for i in amplituds_màximes:
+                indexs = searchindex (i, absft)
+                frequencies.append(freq[indexs])
 
-            #sorted_frequencies = sorted(frequencies)
+            sorted_frequencies = sorted(frequencies)
             #print (sorted_frequencies)
-            #if len(sorted_frequencies) > 1:
-                #diff_freq = sorted_frequencies[1]-sorted_frequencies[0]
-            #else:
-                #diff_freq = sorted_frequencies
+            diff_freq = np.diff(sorted_frequencies)
+            print (diff_freq)
 
-            #print (diff_freq)
-            #mitj_diff_freq = sum(diff_freq)/len(diff_freq)
-            #print (mitj_diff_freq)
-            #z = []
-            #return diff_freq
+    
+            return diff_freq
         
-        #def descartar_valors_i_suma_final (frequenncia):
-            #llista_filtrada = []
+        def descartar_valors_i_suma_final (frequenncia):
+            llista_filtrada = []
+            print (llista_filtrada)
 
-            #for i in frequenncia:
-                #if i > 100:
-                    #llista_filtrada.append(i)
-
-            #mitj = (sum(llista_filtrada)/len(llista_filtrada))
-
-            #return mitj
-        if freq_dominant == 0:
-            nota = 'No identificat'
-            plt.rcParams ['figure.figsize'] = (15,8)
-            plt.plot (freq, absft)
-            plt.title (f'Anàlisi Fourier Skylark{z}')
-            plt.xlabel ('Frequency (Hz)')
-            plt.ylabel ('Amplitude |X(Freq)|')
-            plt.plot (array_frequencies, array_amplituds, 'o', color='k', label=f'audio{z} = {nota}')
-            for x, y in zip(array_frequencies, array_amplituds):
-                plt.annotate(text=(round(x, 2)), xy=(x,y), xytext = (x, y), horizontalalignment = 'left', 
-                        verticalalignment = 'bottom', fontsize=8)
+            for i in frequenncia:
+                if i > 100 and i < freq_dominant:
+                    llista_filtrada.append(i)
             
-            plt.legend()
-            plt.tight_layout ()
-            nom_arxiu = f'Skylark nota {z}'
-            plt.savefig (nom_arxiu)
-            plt.show ()
-            plt.close ()
-            z += 1
+            if len(llista_filtrada) == 0:
+                mitj = 0
 
+            else:
+                mitj = (sum(llista_filtrada)/len(llista_filtrada))
+                print(mitj)
+
+            return mitj
+        
+        if descartar_valors_i_suma_final(freq_fonamental(increment(absft)[1], absft, freq))== 0:
+            if freq_dominant == 0:
+                nota = 'No identificat'
+                plt.rcParams ['figure.figsize'] = (15,8)
+                plt.plot (freq, absft)
+                plt.title (f'Anàlisi Fourier Skylark{z}')
+                plt.xlabel ('Frequency (Hz)')
+                plt.ylabel ('Amplitude |X(Freq)|')
+                plt.plot (array_frequencies, array_amplituds, 'o', color='k', label=f'audio{z} = {nota}')
+                for x, y in zip(array_frequencies, array_amplituds):
+                    plt.annotate(text=(round(x, 2)), xy=(x,y), xytext = (x, y), horizontalalignment = 'left', 
+                            verticalalignment = 'bottom', fontsize=8)
+                
+                plt.legend()
+                plt.tight_layout ()
+                nom_arxiu = f'Skylark nota {z}'
+                plt.savefig (nom_arxiu)
+                plt.show ()
+                plt.close ()
+                z += 1
+
+            else:
+                nota = librosa.hz_to_note(freq_dominant)
+                plt.rcParams ['figure.figsize'] = (15,8)
+                plt.plot (freq, absft)
+                plt.title (f'Anàlisi Fourier Skylark{z}')
+                plt.xlabel ('Frequency (Hz)')
+                plt.ylabel ('Amplitude |X(Freq)|')
+                plt.plot (array_frequencies, array_amplituds, 'o', color='k', label=f'audio{z} = {nota}')
+                for x, y in zip(array_frequencies, array_amplituds):
+                    plt.annotate(text=(round(x, 2)), xy=(x,y), xytext = (x, y), horizontalalignment = 'left', 
+                            verticalalignment = 'bottom', fontsize=8)
+                
+                plt.legend()
+                plt.tight_layout ()
+                nom_arxiu = f'Skylark nota {z}'
+                plt.savefig (nom_arxiu)
+                plt.show ()
+                plt.close ()
+                z += 1
         
         else:
-            nota = librosa.hz_to_note(freq_dominant)
+            nota = librosa.hz_to_note(descartar_valors_i_suma_final(freq_fonamental(increment(absft)[1], absft, freq)))
 
         
         #freq_real = (freq_fonamental(array_amplituds, absft, freq))

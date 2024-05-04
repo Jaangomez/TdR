@@ -3,15 +3,16 @@ import numpy as np
 from scipy import signal
 import matplotlib.pyplot as plt
 import lilypond
+import ly.lex
 import ly
-from music21 import stream, note
+from music21 import stream, note, environment
 import subprocess
 import ly
 import os
 import mingus.extra.lilypond as LilyPond
 from mingus.containers import Bar
 
-arxiu = 'idk.wav'
+arxiu = 'Sounds/melodia piano.wav'
 y, sr = librosa.load(arxiu)
 
 hop_length = 512
@@ -120,7 +121,43 @@ print (lilypond_code)
 
 lilypond_code2 = f"""
 \\version "2.24.3"
-{
-    lilypond_code
+{{
+    {lilypond_code}
+}}
+"""
+lilypond_code3 = """
+\\version "2.24.3"
+    \relative {
+    {c' d e f g a b c}
+    }
 }
 """
+folder_path = "C:/Users/JoanGómezPujol/Desktop/TR/Python/lilypond-2.24.3/bin"
+file_path = folder_path + "/output.pdf"
+
+lilypond_folder = "C:/Users/JoanGómezPujol/Desktop/TR/Python/lilypond-2.24.3/bin/lilypond.exe"
+
+environment.set('lilypondPath', lilypond_folder)
+# Create a Stream object to represent the music score
+score = stream.Score()
+
+# Create a Part object to contain the musical notes
+part = stream.Part()
+
+# Add some musical notes to the Part
+notes = [note.Note("C4"), note.Note("D4"), note.Note("E4"), note.Note("F4")]
+for n in notes:
+    part.append(n)
+
+# Add the Part to the Score
+score.append(part)
+
+# Specify the full path to the folder where LilyPond is installed
+
+lilypond_folder2 = "C:/Users/JoanGómezPujol/Desktop/TR/Python/lilypond-2.24.3/bin"
+
+# Write the Score to a PDF file in the specified folder
+pdf_path = f"{lilypond_folder2}/output"
+score.write('lily.pdf', fp=pdf_path)
+
+print("PDF generated successfully.")

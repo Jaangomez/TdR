@@ -1,21 +1,27 @@
 import librosa
+import numpy as np
+import scipy.io.wavfile as waves
 import matplotlib.pyplot as plt
 
-arxiu = "Sounds Judit/G (F3) Judit.wav"
-temps1 = 1.0  
-tempsfinal = 1.02   
+arxiu = "Sounds/29 (F# mig).wav"
+mostra, senyal = waves.read(arxiu)
+ft = np.fft.rfft (senyal)
+print (np.abs(ft))
+freq = np.fft.rfftfreq (len(senyal), d=1./44110)
+print (freq)
+temps1 = 2
+tempsfinal = 2.02
 
-def plot_waveform_in_time_range(arxiu, temps1, tempsfinal):
+def ona_tems_freq(arxiu, temps1, tempsfinal):
     y, sr = librosa.load(arxiu, sr=None, offset=temps1, duration=tempsfinal - temps1)
 
-    duració_audio = librosa.times_like(y, sr=sr)/10
+    duració_audio = librosa.times_like(y, sr=sr)/50
 
     plt.figure(figsize=(10, 4))
     plt.plot(duració_audio, y)
     plt.xlabel('Temps (s)')
     plt.ylabel('Amplitud')
-    plt.title('El G (F3) tocat per la Judit')
+    plt.title('Ona F#(A4)')
     plt.show()
 
-
-plot_waveform_in_time_range(arxiu, temps1, tempsfinal)
+ona_tems_freq(arxiu, temps1, tempsfinal)
