@@ -21,7 +21,7 @@ def searchindex (Amplituds, llista_amplituds):
             return index
         index += 1
 
-arxiu = 'Sounds/In a sentimental mood complet.wav'
+arxiu = 'Sounds/melodia piano completa (bé).wav'
 y, sr = librosa.load(arxiu)
 
 duration = librosa.get_duration(y=y, sr=sr)
@@ -45,10 +45,10 @@ while i <= len(temps_notes2):
         print ('iep, encara no')
         i+=1
     else:
-        t_final = temps_notes2[i] -0.05
-        t_inicial = temps_notes2[i-1] +0.05
+        t_final = temps_notes2[i] - 0.05
+        t_inicial = temps_notes2[i-1] + 0.05
         
-        arxius_sortida = f'In a sentimental mood{i}.wav'
+        arxius_sortida = f'melo piano{i}.wav'
 
         mostra, so = waves.read(arxiu)
 
@@ -121,6 +121,8 @@ for arxiu in audios_definitius:
         freq = np.fft.rfftfreq (len(senyal), d=1./sampFreq)
         roundfreq = np.round(freq)
         absfreq = np.abs(freq)
+        max_index = np.argmax(np.abs(ft))
+        freq_dominant = freq [max_index]
 
         def increment(absft):
             amplituds = []
@@ -137,7 +139,7 @@ for arxiu in audios_definitius:
                 #if absft_x > maxim:
                     #print ("not max" + "Amplitudex", str(absft_x) > "Amplitudemaxim", str(maxim)) 
             amplituds.sort()
-            amplituds_màximes = amplituds[-10:len(amplituds)]
+            amplituds_màximes = amplituds[-8:len(amplituds)]
             #print (amplituds_màximes)
             dicc = {}
             for i in amplituds_màximes:
@@ -157,9 +159,8 @@ for arxiu in audios_definitius:
         array_frequencies.sort()
         print(array_frequencies)
 
-        if array_frequencies[0] > 100:
+        if array_frequencies[0] > 138:
             freqs_melodia.append(array_frequencies[0])
-
         else: 
             freqs_descartades.append(array_frequencies[0])
             
@@ -202,7 +203,7 @@ score.append(part)
 
 lilypond_folder2 = "C:/Users/JoanGómezPujol/Desktop/TR/Python/lilypond-2.24.3/bin"
 
-pdf_path = f"{lilypond_folder2}/output5"
+pdf_path = f"{lilypond_folder2}/output9"
 score.write('lily.pdf', fp=pdf_path)
 
 print("PDF generated successfully.")
