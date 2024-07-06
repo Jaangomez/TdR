@@ -1,0 +1,141 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.io import wavfile
+from sklearn.neighbors import NearestNeighbors
+
+
+sr, senyal = wavfile.read('Sounds/recording5.wav')
+senyal = senyal / np.max(np.abs(senyal))  #Es normalitza el senyal
+
+#Per conveniència perquè es repeteix diverses vegades
+len_senyal = len(senyal)
+
+#Es crea una funció en què s'usa el mètode "Average Mutual Information"
+def funció_ami(senyal, lag_màxim):
+    ami = np.zeros(lag_màxim) #array pels valors del lag
+    for lag in range(1, lag_màxim + 1):
+        Px = senyal[:-lag]
+        Py = senyal[lag:]
+        histograma_Px = np.histogram(Px, bins=100, density=True)[0]
+        histograma_Py = np.histogram(Py, bins=100, density=True)[0]
+        Pxy = np.histogram2d(Px, Py, bins=100, density=True)[0] #creació histograma 2D
+        Pxy /= np.sum(Pxy) 
+        #formula del mètode AMI i propietat de la no negativitat
+        ami[lag - 1] = np.sum([Pxy[x, y] * np.log(Pxy[x, y] / (histograma_Px[x] * histograma_Py[y] + 1e-10) + 1e-10)
+                               for x in range(100) for y in range(100) if Pxy[x, y] > 0])
+    return ami
+
+#Calcular AMI per a màxim 100 lags
+lag_màxim = 100
+ami = funció_ami(senyal, lag_màxim)
+
+#Gràfic del mètode AMI
+plt.figure(figsize=(10, 4))
+plt.plot(range(1, lag_màxim + 1), ami)
+plt.title('Average Mutual Information')
+plt.xlabel('Lag')
+plt.ylabel('AMI')
+plt.show()
+
+#El primer mínim es selecciona com el delay
+delay = np.argmin(ami) + 1
+print(f"Delay: {delay}")
+
+#Creació de la funció per a calcular la dimensió d'inclusió amb el mètode de False Nearest Neighbours
+def false_nearest_neighbors(senyal, delay, dimensió_màxima):
+    #Construcció de la matriu de l'espai
+    matriu_delay = np.array([senyal[i:len_senyal-(dimensió_màxima-1)*delay+i]for i in range(dimensió_màxima)]).T
+    #Trobar els punts propers (nearest neighbours)
+    punts_propers = NearestNeighbors(n_neighbors=2).fit(matriu_delay)
+    distancies, indices = punts_propers.kneighbors(matriu_delay)
+    punts_falsos = []
+    for m in range(1, dimensió_màxima):
+        #Es determinen els vectors per a la dimensió actual i la següent
+        vectors_dim_atual = matriu_delay[:, :m]
+        vectors_propera_dim = matriu_delay[:, :m+1]
+        distancies_m = distancies[:, 1][:len_senyal-(dimensió_màxima-m)*delay]
+        distancies_m1 = np.sqrt(np.sum((vectors_propera_dim[:, 1:]-vectors_propera_dim[:,:-1])**2, axis=1))
+        punts = np.mean(distancies_m1 / distancies_m > 10)
+        punts_falsos.append(punts)
+        return punts_falsos
+
+dimensió_màxima = 10
+mètode_fnn = false_nearest_neighbors(senyal, delay, dimensió_màxima)
+
+#La dimensió d'inclusió es determina quan disminueix a menys de 0.01
+dim_inclusió = np.where(np.array(mètode_fnn) < 0.01)[0][0] + 1
+print(f"Dimensió d'inclusió: {dim_inclusió}")
+
+#Gràfic del mètode FNN
+plt.figure(figsize=(10, 4))
+plt.plot(range(1, dimensió_màxima), mètode_fnn)
+plt.title('False Nearest Neighbors')
+plt.xlabel('Dimensió inclusió')
+plt.ylabel('Proporció punts falsos propers')
+plt.show()
+
+#La dimensió d'inclusió es determina quan disminueix a menys de 0.01
+dim_inclusió = np.where(np.array(mètode_fnn) < 0.01)[0][0] + 1
+print(f"Dimensió d'inclusió: {dim_inclusió}")
+
+#Funció per a reconstruir l'espai
+def reconstrucció_espai(senyal, delay, dim_inclusió):
+    len_reconstrucció = len_senyal - (dim_inclusió - 1) * delay
+    if len_reconstrucció <= 0:
+        raise ValueError("Time series is too short for the given embedding parameters.")
+    #Creació de la matriu de l'espai
+    espai = np.array([senyal[i * delay : i * delay + len_reconstrucció] for i in range(dim_inclusió)]).T
+    return espai
+
+#Funció per a calcular l'exponent de Lyapunov
+def exponent_lyapunov(senyal, delay, dim_inclusió, error=1e-10):
+    espai = reconstrucció_espai(senyal, delay, dim_inclusió)
+    num_punts_espai = espai.shape[0]
+    exponents_lyapunov = []
+    for i in range(num_punts_espai - 1):
+        distancia_inicial = np.sqrt(np.sum((espai[i] - espai[i + 1])**2)) + error
+        propera_distancia = np.sqrt(np.sum((espai[i + 1] - espai[(i + 2) % num_punts_espai])**2))
+        if propera_distancia > 0:
+            #S'aproxima l'exponent sols usant el logaritme, sense els límits
+            exponents_lyapunov.append(np.log(propera_distancia / distancia_inicial))
+    if len(exponents_lyapunov) == 0:
+        return np.nan
+    return np.mean(exponents_lyapunov)
+
+aprox_exp_lyapunov = exponent_lyapunov(senyal, delay, dim_inclusió)
+print(f"Exponent Lyapunov: {aprox_exp_lyapunov:.4f}")
+
+#Funció per a calcular la dimensio fractal a través del mètode Higuchi
+def dimensió_fractal_higuchi(senyal, k_max):
+    #Creació array per a la funció Lm(k)
+    Lm_k = np.zeros((k_max, k_max))
+    #s'itera tal com indica la funció real de Highuci, per a k ∈ {1,...,k_max}
+    for k in range(1, k_max + 1):
+        #s'itera tal com indica la funció real de Highuci, per a m ∈ {1,...,k}
+        for m in range(k):
+            sum_punts = 0
+            x = 0
+            #Càlcul llargada Lm
+            for i in range(1, (len_senyal - m) // k):
+                sum_punts += abs(len_senyal[m + i * k] - len_senyal[m + (i - 1) * k])
+                x += 1
+            #Normalització de la funció per x > 0
+            if x > 0:
+                sum_punts = sum_punts * (len_senyal - 1) / (x * k)
+            else:
+                sum_punts = 0
+            #Càlcul llargada Lm(k)
+            Lm_k[m, k - 1] = sum_punts
+    
+    #Es determina la funció L(k), el qual és la mitjana de tots els valor de Lm(k)
+    Lk = np.mean(Lm_k, axis=0)
+    lnLk = np.log(Lk[Lk > 0])
+    lnk = np.log(np.arange(1, k_max + 1))[Lk > 0]
+    
+    #Regressió lineal
+    coeficients = np.polyfit(lnk, lnLk, 1)
+    return coeficients[0]
+
+k_max = 10
+dimensió_fractal = dimensió_fractal_higuchi(senyal, k_max)
+print(f"Dimensió fractal: {dimensió_fractal:.4f}")
