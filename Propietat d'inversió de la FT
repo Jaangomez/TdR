@@ -1,0 +1,30 @@
+import numpy as np
+import scipy.io.wavfile as waves
+import matplotlib.pyplot as plt
+
+
+sr, mostra = waves.read('nom de l’arxiu.wav')
+
+
+ft = np.fft.fft(mostra)
+freq = np.fft.fftfreq(len(ft), 1/sr)
+rft = np.fft.rfft(mostra)
+absrft = np.abs(rft)
+rfreq = np.fft.rfftfreq(len(ft), 1/sr)
+
+
+plt.figure()
+plt.plot(rfreq, absrft)
+plt.title('Espectre original')
+plt.xlabel('Frequency (Hz)')
+plt.ylabel(Amplitude|X(Freq)|')
+plt.show()
+
+
+reconstrucció = np.fft.ifft(ft)
+part_real_original = np.real(reconstrucció)
+
+
+part_real_original = np.int16(part_real_original / np.max(np.abs(part_real_original)) * 32767)
+waves.write('ona_original.wav', sr, part_real_original)
+
