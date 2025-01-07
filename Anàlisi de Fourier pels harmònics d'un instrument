@@ -1,0 +1,78 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import scipy.io.wavfile as waves
+import os
+import matplotlib as mpl
+import itertools as it
+import statistics as st
+import librosa
+
+
+def searchindex (Amplituds, llista_amplituds):
+    index = 0
+    for i in llista_amplituds:
+        if Amplituds == i:
+            return index
+        index += 1
+
+
+arxiu = 'nom de l’arxiu'
+mostra, senyal = waves.read(arxiu)
+
+
+sampFreq = 44110
+tamany = np.shape (senyal)
+
+
+ft = np.fft.rfft (senyal)
+absft = np.abs(ft)
+freq = np.fft.rfftfreq (len(senyal), d=1./mostra)
+
+
+def increment(absft):
+    amplituds = []
+    step = 251
+    x = 251
+    while  step <= len(absft):
+        maxim = (max(absft[(step-251):step]))
+        index = np.where(absft==maxim)[0][0]
+        amplituds.append (maxim)
+        step += 250
+        x += 250
+    amplituds.sort()
+    amplituds_màximes = amplituds[-10:len(amplituds)]
+    dicc = {}
+    for i in amplituds_màximes:
+        indexs = searchindex (i, absft)
+        dicc [i] = freq[indexs]
+       
+    print (dicc)
+    return dicc
+
+
+d = increment(absft)
+array_amplituds = []
+array_frequencies = []
+for i in d.keys():
+    array_amplituds.append (i)
+    array_frequencies.append (d[i])
+
+
+for i in array_amplituds:
+    proporció_general = i*100/sum(absft)
+    proporció_dins_harmònics_màxims = i*100/sum(array_amplituds)
+    print (f'{proporció_general}%')
+    print (f'{proporció_dins_harmònics_màxims}%')
+
+
+plt.rcParams ['figure.figsize'] = (15,8)
+plt.plot (freq, absft)
+plt.title ('Títol del gràfic')
+plt.xlabel ('Frequency (Hz)')
+plt.ylabel ('Amplitude |X(Freq)|')
+plt.plot (array_frequencies, array_amplituds, 'o', color='k')
+for x, y in zip(array_frequencies, array_amplituds):
+    plt.annotate(text=(round(x, 2)), xy=(x,y), xytext = (x, y), horizontalalignment = 'left',verticalalignment = 'bottom', fontsize=8)
+       
+plt.tight_layout ()
+plt.show ()
