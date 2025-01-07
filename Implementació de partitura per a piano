@@ -1,0 +1,97 @@
+import librosa
+import numpy as np
+from scipy import signal
+import matplotlib.pyplot as plt
+import lilypond
+import ly
+from music21 import stream, note, environment
+import os
+import mingus.extra.lilypond as LilyPond
+
+
+arxiu = 'nom de l’arxiu d’àudio'
+y, sr = librosa.load(arxiu)
+
+
+duration = librosa.get_duration(y=y, sr=sr)
+print (duration)
+frame_notes_en_el_temps = librosa.onset.onset_detect(y=y, sr=sr, wait=1, pre_avg=1, post_avg=1, pre_max=1, post_max=1)
+print(frame_notes_en_el_temps)
+temps_notes = librosa.frames_to_time(frame_notes_en_el_temps)
+print(temps_notes)
+
+
+frame = 2048
+salt = 512
+frames_arxiu = librosa.util.frame(y, frame_length=frame, hop_length=salt)
+
+
+fft_frames = np.fft.fft(frames_arxiu, axis = 0)
+fft_freq = np.fft.fftfreq(len(fft_frames), d=1./sr)
+amplitud = np.abs(fft_frames)
+melodia = []
+for i in (temps_notes):
+    index = int(i*sr/salt)
+    temps = amplitud[:,index]
+    freqindex = np.argmax(temps)
+    freq = np.abs(fft_freq[freqindex])
+    melodia.append(freq)
+
+
+print (melodia)
+
+
+melodia_wth_0 = [freq for freq in melodia if freq != 0]
+arr_notes = []
+for freq in melodia_wth_0:
+    nota = librosa.hz_to_note(freq)
+    arr_notes.append(nota)
+
+
+print (arr_notes)
+
+
+dir_carpeta = "direcció de la carpeta"
+dir_arxiu = dir_carpeta + "/output.pdf"
+
+
+dir_lilypond = "direcció del lilypond"
+
+
+environment.set('lilypondPath', dir_lilypond)
+
+
+score = stream.Score()
+part = stream.Part()
+
+
+def reemplaçar_alteracions (sq_notes):
+    sq_notes = sq_notes.replace("♯", "#")
+    sq_notes = sq_notes.replace("♭", "b")
+    return sq_notes
+
+
+arr_notes = [reemplaçar_alteracions(n) for n in arr_notes]
+
+
+i=0
+
+
+while i <= len(arr_notes):
+    try:
+        notes = [note.Note(f"{arr_notes[i]}")]
+        part.append(notes)
+        i+=1
+    except IndexError:
+        break
+
+
+score.append(part)
+
+
+dir_lilypond2 = "direcció d’on es vol guardar l’arxiu lilypond"
+
+
+dir_pdf = f"{dir_lilypond2}/output"
+score.write('lily.pdf', fp=dir_pdf)
+

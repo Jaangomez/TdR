@@ -1,0 +1,30 @@
+import librosa
+import numpy as np
+import scipy.io.wavfile as waves
+import matplotlib.pyplot as plt
+
+
+arxiu = "nom de l’arxiu"
+#Els temps 1 i tempsfinal s’apliquen quan es vol marcar un rang determinat de l’ona. Si es vol mostrar tot, es poden al·ludir.
+temps1 = valor temps inicial
+tempsfinal = valor temps final
+
+
+def ona_temps_freq(arxiu, temps1, tempsfinal):
+    y, sr = librosa.load(arxiu, sr=None, offset=temps1, duration=tempsfinal - temps1)
+    len_senyal = len(y)
+
+
+    duració = librosa.get_duration(y=y, sr=sr)
+    temps = np.linspace(0, duració, num=len_senyal)
+
+
+    plt.figure(figsize=(10, 4))
+    plt.plot(temps, y)
+    plt.xlabel('Temps (s)')
+    plt.ylabel('Amplitud')
+    plt.title('')
+    plt.show()
+
+
+ona_temps_freq(arxiu, temps1, tempsfinal)
